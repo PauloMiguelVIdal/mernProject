@@ -84,7 +84,7 @@ function App() {
         />
         <button type="submit">Cadastrar</button>
       </form>
-
+teste
       <ul>
         {produtos.length > 0 ? (
           produtos.map((p) => (

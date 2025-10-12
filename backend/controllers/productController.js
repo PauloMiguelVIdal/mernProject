@@ -14,7 +14,7 @@ const getProducts = async (req, res) => {
 // Criar produto com imagem
 const createProduct = async (req, res) => {
   try {
-    const { nome, preco, descricao } = req.body;
+    const { nome, preco, descricao,qtdPequeno,qtdMedio,qtdGrande,qtdGGrande } = req.body;
    const imagem = req.file ? `/uploads/${req.file.filename}` : null;
 
     const product = new Product({

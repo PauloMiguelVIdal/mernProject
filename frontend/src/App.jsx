@@ -3,7 +3,15 @@ import UploadImagem from "./UploadImagem";
 
 function App() {
   const [produtos, setProdutos] = useState([]);
-  const [form, setForm] = useState({ nome: "", preco: "", descricao: "" });
+ const [form, setForm] = useState({
+  nome: "",
+  preco: "",
+  descricao: "",
+  qtdPequeno: "",
+  qtdMedio: "",
+  qtdGrande: "",
+  qtdGGrande: "",
+});
 
   // Buscar produtos
   const fetchProdutos = async () => {
@@ -58,7 +66,12 @@ function App() {
               )}
               
               <span className="flex-1">
-                {p.nome} - R${p.preco.toFixed(2)}
+                {p.nome} - R${p.preco.toFixed(2)}<br/>
+                Estoque atual<br/>
+                Quantidade P : {p.qtdPequeno} -  <br/>
+                Quantidade M : {p.qtdMedio} - <br/>
+                Quantidade G : {p.qtdGrande} - <br/>
+                Quantidade GG : {p.qtdGGrande} - <br/>
                 {p.descricao && <span className="text-gray-600 text-sm block">{p.descricao}</span>}
               </span>
               

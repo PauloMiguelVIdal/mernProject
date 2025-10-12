@@ -10,6 +10,22 @@ const productSchema = new mongoose.Schema(
       type: Number, 
       required: true 
     },
+    qtdPequeno: { 
+      type: Number, 
+      required: true 
+    },
+    qtdMedio: { 
+      type: Number, 
+      required: true 
+    },
+    qtdGrande: { 
+      type: Number, 
+      required: true 
+    },
+    qtdGGrande: { 
+      type: Number, 
+      required: true 
+    },
     descricao: { 
       type: String 
     },

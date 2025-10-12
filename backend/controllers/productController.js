@@ -22,6 +22,10 @@ const createProduct = async (req, res) => {
       preco,
       descricao,
       imagem,
+      qtdPequeno,
+      qtdMedio,
+      qtdGrande,
+      qtdGGrande
     });
 
     await product.save();

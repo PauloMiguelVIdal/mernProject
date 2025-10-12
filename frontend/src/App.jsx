@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import UploadImagem from "./UploadImagem";
 
 function App() {
   const [produtos, setProdutos] = useState([]);
@@ -20,30 +21,6 @@ function App() {
     fetchProdutos();
   }, []);
 
-  // Criar produto
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const newProduct = {
-        ...form,
-        preco: parseFloat(form.preco), // garante que seja número
-      };
-
-      const res = await fetch("http://localhost:5000/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
-      });
-
-      if (!res.ok) throw new Error("Erro ao criar produto");
-
-      setForm({ nome: "", preco: "", descricao: "" });
-      fetchProdutos();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   // Deletar produto
   const handleDelete = async (id) => {
     try {
@@ -58,39 +35,39 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Cadastro de Produtos</h1>
+    <div className="w-[100vw] h-[100vh] text-black bg-white flex flex-col items-center justify-start p-4">
+      <h1 className="text-2xl mb-4">Cadastro de Produtos</h1>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Nome"
-          value={form.nome}
-          onChange={(e) => setForm({ ...form, nome: e.target.value })}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Preço"
-          value={form.preco}
-          onChange={(e) => setForm({ ...form, preco: e.target.value })}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Descrição"
-          value={form.descricao}
-          onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-        />
-        <button type="submit">Cadastrar</button>
-      </form>
-teste
-      <ul>
+      {/* Upload de imagem - agora é o único formulário */}
+      <UploadImagem form={form} setForm={setForm} fetchProdutos={fetchProdutos} />
+
+      <ul className="mt-6 w-full max-w-2xl">
         {produtos.length > 0 ? (
           produtos.map((p) => (
-            <li key={p._id}>
-              {p.nome} - R${p.preco.toFixed(2)}
-              <button onClick={() => handleDelete(p._id)}>Excluir</button>
+            <li
+              key={p._id}
+              className="flex justify-between items-center p-2 border-b gap-4"
+            >
+              {/* Miniatura da imagem */}
+              {p.imagem && (
+                <img
+                  src={`http://localhost:5000${p.imagem}`}
+                  alt={p.nome}
+                  className="w-16 h-16 object-cover rounded"
+                />
+              )}
+              
+              <span className="flex-1">
+                {p.nome} - R${p.preco.toFixed(2)}
+                {p.descricao && <span className="text-gray-600 text-sm block">{p.descricao}</span>}
+              </span>
+              
+              <button
+                onClick={() => handleDelete(p._id)}
+                className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+              >
+                Excluir
+              </button>
             </li>
           ))
         ) : (

@@ -1,14 +1,38 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getProducts, createProduct, deleteProduct } = require('../controllers/productController');
+const path = require("path");
+const multer = require("multer");
+const {
+  getProducts,
+  createProduct,
+  deleteProduct,
+} = require("../controllers/productController");
 
-// GET /api/products
-router.get('/', getProducts);
+// ================================
+// 🔧 Configuração do Multer
+// ================================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // pasta onde a imagem será salva
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // renomeia com timestamp
+  },
+});
 
-// POST /api/products
-router.post('/', createProduct);
+const upload = multer({ storage });
 
-// DELETE /api/products/:id
-router.delete('/:id', deleteProduct);
+// ================================
+// 📦 Rotas de produtos
+// ================================
+
+// GET /api/products → lista todos os produtos
+router.get("/", getProducts);
+
+// POST /api/products → cria produto + faz upload da imagem
+router.post("/", upload.single("imagem"), createProduct);
+
+// DELETE /api/products/:id → deleta produto pelo ID
+router.delete("/:id", deleteProduct);
 
 module.exports = router;

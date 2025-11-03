@@ -1,26 +1,20 @@
 {
   "name": "mern-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MERN Stack Application",
+  "private": true,
   "scripts": {
-    "start": "concurrently \"npm run server --prefix backend\" \"npm run dev --prefix frontend\"",
-    "server": "nodemon server.js --prefix backend",
-    "client": "npm run dev --prefix frontend"
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd frontend && npm run dev",
+    "server": "cd backend && npm run server",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
   },
-  "keywords": [],
+  "keywords": ["mern", "mongodb", "express", "react", "nodejs"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@tailwindcss/vite": "^4.1.14",
-    "concurrently": "^9.2.1",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "multer": "^2.0.2",
-    "tailwindcss": "^4.1.14"
-  },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "concurrently": "^9.1.0"
   }
 }

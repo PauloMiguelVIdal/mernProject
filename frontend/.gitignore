@@ -1,18 +1,48 @@
-# Logs
-logs
-*.log
+# ================================
+# 🔒 ARQUIVOS SENSÍVEIS (NUNCA COMMITAR!)
+# ================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.env.*
+
+# ================================
+# 📦 Node.js
+# ================================
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# ================================
+# 🏗️ Build
+# ================================
 dist
 dist-ssr
+build
 *.local
 
-# Editor directories and files
+# ================================
+# 📸 Uploads (imagens dos produtos)
+# ================================
+uploads/
+public/uploads/
+backend/uploads/
+
+# ================================
+# 📝 Logs
+# ================================
+logs
+*.log
+
+# ================================
+# 💻 IDEs e Editores
+# ================================
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,3 +52,42 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*~
+
+# ================================
+# 🧪 Testes e Coverage
+# ================================
+coverage/
+.nyc_output/
+
+# ================================
+# 🔐 Certificados e Chaves
+# ================================
+*.pem
+*.key
+*.cert
+
+# ================================
+# 💾 Database
+# ================================
+*.sqlite
+*.db
+
+# ================================
+# 🗂️ Sistema Operacional
+# ================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ================================
+# 📱 Mobile
+# ================================
+*.apk
+*.ipa
+*.mobileprovision

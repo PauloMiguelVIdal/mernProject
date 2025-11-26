@@ -12,7 +12,7 @@ connectDB();
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:5173', // URL do seu frontend
+  origin: 'https://mern-project-yrlz.vercel.app/', // URL do seu frontend
   credentials: true
 }));
 app.use(express.json());

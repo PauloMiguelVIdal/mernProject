@@ -18,6 +18,8 @@ import {
   Stepper,
   Step,
   StepLabel,
+  CircularProgress,
+  Chip,
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -25,12 +27,15 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../Navbar/Navbar';
+import axios from 'axios';
+
 
 const Checkout = () => {
   const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [tempCep, setTempCep] = useState('');
 
   // Dados do formulário
   const [shippingData, setShippingData] = useState({
@@ -46,10 +51,27 @@ const Checkout = () => {
     estado: '',
   });
 
+// melhorenvio.calculoDeFretesPorProdutos({
+//   Authorization: `Bearer ${MELHOR_ENVIO_TOKEN}`,
+//   'User-Agent': 'Loja Online (paulo2.0miguel@gmail.com)'
+// })
+//   .then(({ data }) => console.log(data))
+//   .catch(err => console.error(err));
+
+
+
+
+
   const [paymentMethod, setPaymentMethod] = useState('pix');
   const [errors, setErrors] = useState({});
 
-  const steps = ['Dados de Entrega', 'Pagamento', 'Confirmação'];
+  // Estados para frete
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedShipping, setSelectedShipping] = useState(null);
+  const [loadingShipping, setLoadingShipping] = useState(false);
+  const [shippingError, setShippingError] = useState('');
+
+  const steps = ['Cálculo de Frete', 'Dados de Entrega', 'Pagamento', 'Confirmação'];
 
   useEffect(() => {
     // Verificar autenticação
@@ -95,6 +117,17 @@ const Checkout = () => {
   };
 
   const calculateTotal = () => {
+    const subtotal = cart.reduce((acc, item) => {
+      const preco = Number(item.preco) || 0;
+      const quantity = Number(item.quantity) || 0;
+      return acc + (preco * quantity);
+    }, 0);
+
+    const shippingCost = selectedShipping ? Number(selectedShipping.price) : 0;
+    return subtotal + shippingCost;
+  };
+
+  const calculateSubtotal = () => {
     return cart.reduce((acc, item) => {
       const preco = Number(item.preco) || 0;
       const quantity = Number(item.quantity) || 0;
@@ -112,6 +145,92 @@ const Checkout = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleCalculateShipping = () => {
+    const cleanCep = tempCep.replace(/\D/g, '');
+    
+    if (cleanCep.length !== 8) {
+      setShippingError('Por favor, digite um CEP válido com 8 dígitos');
+      return;
+    }
+    
+    calculateShipping(cleanCep);
+  };
+
+  const calculateShipping = async (cep) => {
+    setLoadingShipping(true);
+    setShippingError('');
+    setShippingOptions([]);
+    setSelectedShipping(null);
+
+    try {
+      // Calcular dimensões do pacote baseado nos produtos
+      const packageDimensions = calculatePackageDimensions();
+
+      console.log('🚀 Enviando requisição para backend:', {
+        cep,
+        packageDimensions
+      });
+
+      // Chamar API do backend (não do Melhor Envio diretamente)
+      const response = await fetch('http://localhost:5000/api/shipping/calculate-shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cep: cep,
+          packageDimensions: packageDimensions
+        })
+      });
+
+      console.log('📡 Status da resposta:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Erro na resposta:', errorData);
+        throw new Error(errorData.error || 'Erro ao calcular frete');
+      }
+
+      const options = await response.json();
+      console.log('✅ Opções de frete recebidas:', options);
+
+      if (options && options.length > 0) {
+        setShippingOptions(options);
+        // Selecionar a opção mais barata por padrão
+        setSelectedShipping(options[0]);
+      } else {
+        setShippingError('Não foi possível calcular o frete para este CEP.');
+      }
+    } catch (error) {
+      console.error('💥 Erro ao calcular frete:', error);
+      setShippingError(error.message || 'Erro ao calcular frete. Verifique o CEP e tente novamente.');
+    } finally {
+      setLoadingShipping(false);
+    }
+  };
+
+
+  const calculatePackageDimensions = () => {
+    // Calcular peso total
+    const totalWeight = cart.reduce((acc, item) => {
+      // Peso estimado por produto (em kg)
+      const weightPerItem = 0.5; // Ajustado para 0.5kg por item
+      return acc + (weightPerItem * item.quantity);
+    }, 0);
+
+    // Dimensões MÍNIMAS exigidas pelo Melhor Envio:
+    // Altura: mín 2cm, máx 100cm
+    // Largura: mín 11cm, máx 100cm  
+    // Comprimento: mín 16cm, máx 100cm
+    // Peso: mín 0.3kg, máx 30kg
+    return {
+      height: Math.max(5, 10),      // Mínimo 2cm, usando 5cm
+      width: Math.max(15, 20),      // Mínimo 11cm, usando 15cm
+      length: Math.max(20, 30),     // Mínimo 16cm, usando 20cm
+      weight: Math.max(totalWeight, 0.5) // Peso mínimo de 0.5kg
+    };
   };
 
   const validateShippingData = () => {
@@ -133,10 +252,22 @@ const Checkout = () => {
 
   const handleNext = () => {
     if (activeStep === 0) {
+      // Validar se frete foi selecionado
+      if (!selectedShipping) {
+        setShippingError('Por favor, calcule e selecione uma opção de frete');
+        return;
+      }
+      // Copiar CEP para os dados de entrega
+      setShippingData(prev => ({ ...prev, cep: tempCep }));
+    }
+    
+    if (activeStep === 1) {
+      // Validar dados de entrega
       if (!validateShippingData()) {
         return;
       }
     }
+    
     setActiveStep(prev => prev + 1);
   };
 
@@ -157,7 +288,6 @@ const Checkout = () => {
       setActiveStep(prev => prev + 1);
     }, 2000);
   };
-
   // Se pedido foi finalizado
   if (activeStep === 3) {
     return (
@@ -254,6 +384,129 @@ const Checkout = () => {
             }}>
               {/* Passo 1: Dados de Entrega */}
               {activeStep === 0 && (
+  <Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+      <LocalShippingIcon sx={{ color: '#ec407a', fontSize: 28 }} />
+      <Typography variant="h6" fontWeight="bold" color="#424242">
+        Calcular Frete
+      </Typography>
+    </Box>
+
+    <Alert severity="info" sx={{ mb: 3 }}>
+      Digite seu CEP para calcular as opções de frete disponíveis
+    </Alert>
+
+    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <TextField
+        fullWidth
+        label="CEP"
+        value={tempCep}
+        onChange={(e) => setTempCep(e.target.value)}
+        placeholder="00000-000"
+        inputProps={{ maxLength: 9 }}
+        sx={inputStyles}
+      />
+      <Button
+        variant="contained"
+        onClick={handleCalculateShipping}
+        disabled={loadingShipping}
+        sx={{
+          background: 'linear-gradient(135deg, #ec407a, #ab47bc)',
+          color: 'white',
+          fontWeight: 'bold',
+          px: 4,
+          whiteSpace: 'nowrap',
+          '&:hover': { 
+            background: 'linear-gradient(135deg, #d81b60, #8e24aa)',
+          },
+        }}
+      >
+        Calcular
+      </Button>
+    </Box>
+
+    {/* Opções de Frete */}
+    {loadingShipping && (
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <CircularProgress sx={{ color: '#ec407a' }} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Calculando frete...
+        </Typography>
+      </Box>
+    )}
+
+    {shippingError && (
+      <Alert severity="error" sx={{ mt: 3 }}>
+        {shippingError}
+      </Alert>
+    )}
+
+    {shippingOptions.length > 0 && (
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="subtitle1" fontWeight="bold" color="#424242" gutterBottom>
+          Escolha a forma de entrega:
+        </Typography>
+        
+        <RadioGroup
+          value={selectedShipping?.id}
+          onChange={(e) => {
+            const option = shippingOptions.find(opt => opt.id === Number(e.target.value));
+            setSelectedShipping(option);
+            setShippingError(''); // Limpar erro ao selecionar
+          }}
+        >
+          {shippingOptions.map((option) => (
+            <Box 
+              key={option.id}
+              sx={{ 
+                p: 2, 
+                mb: 2, 
+                border: '2px solid',
+                borderColor: selectedShipping?.id === option.id ? '#ec407a' : '#f8bbd0',
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                '&:hover': {
+                  borderColor: '#ec407a',
+                  backgroundColor: '#fce4ec',
+                }
+              }}
+            >
+              <FormControlLabel
+                value={option.id}
+                control={<Radio sx={{ color: '#ec407a', '&.Mui-checked': { color: '#ec407a' } }} />}
+                label={
+                  <Box sx={{ width: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography fontWeight="bold" color="#424242">
+                          {option.company}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Entrega em até {option.deliveryTime} dias úteis
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={`R$ ${option.price.toFixed(2)}`}
+                        sx={{ 
+                          background: 'linear-gradient(135deg, #ec407a, #ab47bc)',
+                          color: 'white',
+                          fontWeight: 'bold'
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                }
+                sx={{ width: '100%', m: 0 }}
+              />
+            </Box>
+          ))}
+        </RadioGroup>
+      </Box>
+    )}
+  </Box>
+)}
+              {activeStep === 1 && (
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                     <LocalShippingIcon sx={{ color: '#ec407a', fontSize: 28 }} />
@@ -309,6 +562,8 @@ const Checkout = () => {
                         onChange={handleInputChange}
                         error={!!errors.cep}
                         helperText={errors.cep}
+                        placeholder="00000-000"
+                        inputProps={{ maxLength: 9 }}
                         sx={inputStyles}
                       />
                     </Grid>
@@ -384,11 +639,90 @@ const Checkout = () => {
                       />
                     </Grid>
                   </Grid>
+
+                  {/* Opções de Frete */}
+                  {loadingShipping && (
+                    <Box sx={{ mt: 3, textAlign: 'center' }}>
+                      <CircularProgress sx={{ color: '#ec407a' }} />
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Calculando frete...
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {shippingError && (
+                    <Alert severity="error" sx={{ mt: 3 }}>
+                      {shippingError}
+                    </Alert>
+                  )}
+
+                  {shippingOptions.length > 0 && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle1" fontWeight="bold" color="#424242" gutterBottom>
+                        Escolha a forma de entrega:
+                      </Typography>
+                      
+                      <RadioGroup
+                        value={selectedShipping?.id}
+                        onChange={(e) => {
+                          const option = shippingOptions.find(opt => opt.id === Number(e.target.value));
+                          setSelectedShipping(option);
+                        }}
+                      >
+                        {shippingOptions.map((option) => (
+                          <Box 
+                            key={option.id}
+                            sx={{ 
+                              p: 2, 
+                              mb: 2, 
+                              border: '2px solid',
+                              borderColor: selectedShipping?.id === option.id ? '#ec407a' : '#f8bbd0',
+                              borderRadius: 2,
+                              cursor: 'pointer',
+                              transition: 'all 0.3s',
+                              '&:hover': {
+                                borderColor: '#ec407a',
+                                backgroundColor: '#fce4ec',
+                              }
+                            }}
+                          >
+                            <FormControlLabel
+                              value={option.id}
+                              control={<Radio sx={{ color: '#ec407a', '&.Mui-checked': { color: '#ec407a' } }} />}
+                              label={
+                                <Box sx={{ width: '100%' }}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                      <Typography fontWeight="bold" color="#424242">
+                                        {option.company}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Entrega em até {option.deliveryTime} dias úteis
+                                      </Typography>
+                                    </Box>
+                                    <Chip 
+                                      label={`R$ ${option.price.toFixed(2)}`}
+                                      sx={{ 
+                                        background: 'linear-gradient(135deg, #ec407a, #ab47bc)',
+                                        color: 'white',
+                                        fontWeight: 'bold'
+                                      }}
+                                    />
+                                  </Box>
+                                </Box>
+                              }
+                              sx={{ width: '100%', m: 0 }}
+                            />
+                          </Box>
+                        ))}
+                      </RadioGroup>
+                    </Box>
+                  )}
                 </Box>
               )}
 
               {/* Passo 2: Pagamento */}
-              {activeStep === 1 && (
+              {activeStep === 2 && (
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                     <PaymentIcon sx={{ color: '#ec407a', fontSize: 28 }} />
@@ -487,7 +821,7 @@ const Checkout = () => {
               )}
 
               {/* Passo 3: Confirmação */}
-              {activeStep === 2 && (
+              {activeStep === 3 && (
                 <Box>
                   <Typography variant="h6" fontWeight="bold" color="#424242" gutterBottom>
                     Revise seu Pedido
@@ -508,6 +842,30 @@ const Checkout = () => {
                       {shippingData.bairro}, {shippingData.cidade} - {shippingData.estado}<br />
                       CEP: {shippingData.cep}
                     </Typography>
+                  </Box>
+
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="#ab47bc" fontWeight="bold" gutterBottom>
+                      Frete Selecionado:
+                    </Typography>
+                    {selectedShipping && (
+                      <Box sx={{ 
+                        p: 2, 
+                        border: '2px solid #f8bbd0', 
+                        borderRadius: 2,
+                        backgroundColor: '#fce4ec'
+                      }}>
+                        <Typography variant="body2" color="#424242" fontWeight="bold">
+                          {selectedShipping.company}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Entrega em até {selectedShipping.deliveryTime} dias úteis
+                        </Typography>
+                        <Typography variant="body2" color="#ec407a" fontWeight="bold">
+                          R$ {selectedShipping.price.toFixed(2)}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
 
                   <Box>
@@ -545,7 +903,7 @@ const Checkout = () => {
                   </Button>
                 )}
                 
-                {activeStep < 2 ? (
+                {activeStep < 3 ? (
                   <Button
                     onClick={handleNext}
                     variant="contained"
@@ -630,15 +988,21 @@ const Checkout = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography color="#424242">Subtotal:</Typography>
                   <Typography fontWeight="600" color="#ab47bc">
-                    R$ {calculateTotal().toFixed(2)}
+                    R$ {calculateSubtotal().toFixed(2)}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography color="#424242">Frete:</Typography>
-                  <Typography fontWeight="600" sx={{ color: '#4caf50' }}>
-                    Grátis
-                  </Typography>
+                  {selectedShipping ? (
+                    <Typography fontWeight="600" color="#ec407a">
+                      R$ {selectedShipping.price.toFixed(2)}
+                    </Typography>
+                  ) : (
+                    <Typography fontWeight="600" sx={{ color: '#9e9e9e' }}>
+                      A calcular
+                    </Typography>
+                  )}
                 </Box>
 
                 <Divider sx={{ my: 2, borderColor: '#e1bee7' }} />

@@ -4,13 +4,17 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const productRoutes = require("./routes/productRoutes");
 const userRoutes = require("./routes/userRoutes"); // ✨ NOVO
+const shippingRoutes = require("./routes/shippingRoutes");
 const path = require("path");
 
 dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // URL do seu frontend
+  credentials: true
+}));
 app.use(express.json());
 
 // ================================
@@ -18,7 +22,7 @@ app.use(express.json());
 // ================================
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes); // ✨ NOVO
-
+app.use("/api/shipping", shippingRoutes); 
 // Rota de teste
 app.get("/", (req, res) => {
   res.send("Backend rodando! 🚀");

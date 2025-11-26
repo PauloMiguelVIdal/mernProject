@@ -9,7 +9,9 @@
     "client": "cd frontend && npm run dev",
     "server": "cd backend && npm run server",
     "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start": "cd backend && npm start",
+     "vercel-build": "cd frontend && npm i --include=dev && npm run build"
+
   },
   "keywords": [
     "mern",

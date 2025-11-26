@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "melhorenvio",
+      "source": "@melhorenvio/v1.0#8ixf39mhpau5a5",
+      "integrity": "sha512-3mpzBv7R+qvU//8E9iePEOACRPz1VB139yP85QCZh/PE2zsRHExGDYV497wKvDIGrJGuTG4P/Smn1DtmZ2tW5w==",
+      "installerVersion": "6.1.3"
+    }
+  ]
+}

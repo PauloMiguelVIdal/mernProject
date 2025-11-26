@@ -305,7 +305,7 @@ const Checkout = () => {
           }}>
             <CheckCircleIcon sx={{ fontSize: 100, color: '#4caf50', mb: 3 }} />
             <Typography variant="h4" fontWeight="bold" color="#4caf50" gutterBottom>
-              Pedido Realizado com Sucesso!
+              Parabéns, pedido Realizado com Sucesso!
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 4 }}>
               Você receberá um email de confirmação em breve.

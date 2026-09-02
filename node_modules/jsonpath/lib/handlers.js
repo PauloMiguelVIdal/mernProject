@@ -3,6 +3,152 @@ var slice = require('./slice');
 var _evaluate = require('static-eval');
 var _uniq = require('underscore').uniq;
 
+// Property names that must never be accessible in expressions.
+// Mitigates prototype pollution and constructor escape attacks.
+var UNSAFE_PROPERTY_NAMES = Object.create(null);
+
+/* jshint -W069: true */
+UNSAFE_PROPERTY_NAMES['constructor'] = true;
+UNSAFE_PROPERTY_NAMES['__proto__'] = true;
+UNSAFE_PROPERTY_NAMES['prototype'] = true;
+/* jshint -W069: false */
+
+function isUnsafePropertyName(name) {
+  return typeof name === 'string' && UNSAFE_PROPERTY_NAMES[name] === true;
+}
+
+function isSafeAst(ast) {
+  if (!ast || typeof ast !== 'object') return false;
+
+  function walk(node) {
+    if (!node || typeof node !== 'object' || !node.type) {
+      return false;
+    }
+
+    switch (node.type) {
+
+      // ===== SAFE TERMINALS =====
+
+      case 'Literal':
+        return true;
+
+      case 'Identifier':
+        // Only allow the special scope identifier
+        return node.name === '@';
+
+
+      // ===== PROPERTY ACCESS =====
+
+      case 'MemberExpression': {
+        if (!walk(node.object)) {
+          return false;
+        }
+
+        // Non-computed: obj.property
+        if (!node.computed && node.property.type === 'Identifier') {
+          if (isUnsafePropertyName(node.property.name)) {
+            return false;
+          }
+          return true;
+        }
+
+        // Computed: obj["property"]
+        if (node.computed) {
+          if (!walk(node.property)) {
+            return false;
+          }
+
+          if (
+            node.property.type === 'Literal' &&
+            isUnsafePropertyName(String(node.property.value))
+          ) {
+            return false;
+          }
+
+          return true;
+        }
+
+        return false;
+      }
+
+
+      // ===== EXPRESSIONS =====
+
+      case 'UnaryExpression':
+        return walk(node.argument);
+
+      case 'BinaryExpression':
+      case 'LogicalExpression':
+        return walk(node.left) && walk(node.right);
+
+      case 'ConditionalExpression':
+        return (
+          walk(node.test) &&
+          walk(node.consequent) &&
+          walk(node.alternate)
+        );
+
+      case 'ArrayExpression':
+        for (var i = 0; i < node.elements.length; i++) {
+          if (!walk(node.elements[i])) {
+            return false;
+          }
+        }
+        return true;
+
+      case 'ObjectExpression':
+        for (var j = 0; j < node.properties.length; j++) {
+          var prop = node.properties[j];
+
+          // Reject unsafe keys
+          if (
+            prop.key &&
+            (
+              (prop.key.type === 'Identifier' &&
+               isUnsafePropertyName(prop.key.name)) ||
+              (prop.key.type === 'Literal' &&
+               isUnsafePropertyName(String(prop.key.value)))
+            )
+          ) {
+            return false;
+          }
+
+          if (!walk(prop.value)) {
+            return false;
+          }
+        }
+        return true;
+
+
+      // ===== EXPLICITLY REJECT DANGEROUS TYPES =====
+      // Security: do not rely on default deny; list each code-execution / escape vector.
+
+      case 'CallExpression':
+      case 'NewExpression':
+      case 'FunctionExpression':
+      case 'ArrowFunctionExpression':
+      case 'ThisExpression':
+      case 'AssignmentExpression':
+      case 'UpdateExpression':
+      case 'SequenceExpression':
+      case 'TemplateLiteral':
+      case 'TemplateElement':
+      case 'TaggedTemplateExpression':
+      case 'ReturnStatement':
+      case 'ExpressionStatement':
+        return false;
+
+
+      // ===== DEFAULT DENY =====
+
+      default:
+        return false;
+    }
+  }
+
+  return walk(ast);
+}
+
 var Handlers = function() {
   return this.initialize.apply(this, arguments);
 }
@@ -239,8 +385,11 @@ function _traverse(passable) {
   }
 }
 
-function evaluate() {
-  try { return _evaluate.apply(this, arguments) }
+function evaluate(ast, scope) {
+  if (!isSafeAst(ast)) {
+    throw new Error('Unsafe expression: script and filter expressions may only access the current node (@) with safe property names');
+  }
+  try { return _evaluate(ast, scope) }
   catch (e) { }
 }
 

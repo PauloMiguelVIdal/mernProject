@@ -12,7 +12,7 @@ connectDB();
 
 const app = express();
 app.use(cors({
-  origin: 'mern-project-iota-three.vercel.app', // URL do seu frontend
+  origin: 'https://mern-project-iota-three.vercel.app', // URL do seu frontend
   credentials: true
 }));
 app.use(express.json());

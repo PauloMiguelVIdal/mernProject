@@ -206,7 +206,7 @@ const Cart = () => {
                       {/* Imagem */}
                       <Grid item xs={3} sm={2}>
                         <img
-                          src={`https://mernproject-l8w4.onrender.com${item.imagem}`}
+                          src={`${item.imagem}`}
                           alt={item.nome}
                           style={{
                             width: '100%',

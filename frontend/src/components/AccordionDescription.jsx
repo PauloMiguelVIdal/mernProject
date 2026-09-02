@@ -103,7 +103,7 @@ export default function AccordionDescription({
     window.dispatchEvent(new Event("cartUpdated"));
 
     // Feedback visual
-    alert(`✅ ${quantidadeTamSel}x ${nome} (${tamSelecionado}) (${preco}) adicionado ao carrinho!`);
+    // alert(`✅ ${quantidadeTamSel}x ${nome} (${tamSelecionado}) (${preco}) adicionado ao carrinho!`);
 
     // Resetar quantidade
     setQuantidade(1);

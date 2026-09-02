@@ -174,7 +174,7 @@ const Checkout = () => {
       });
 
       // Chamar API do backend (não do Melhor Envio diretamente)
-      const response = await fetch('http://localhost:5000/api/shipping/calculate-shipping', {
+      const response = await fetch('https://mernproject-l8w4.onrender.com/api/shipping/calculate-shipping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

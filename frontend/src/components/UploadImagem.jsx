@@ -34,7 +34,7 @@ function UploadImagem({ form, setForm, fetchProdutos }) {
     formData.append("qtdGGrande", form.qtdGGrande);
 
     try {
-      const resposta = await fetch("http://localhost:5000/api/products", {
+      const resposta = await fetch("https://mernproject-l8w4.onrender.com/api/products", {
         method: "POST",
         body: formData,
       });

@@ -21,7 +21,7 @@ function RegisterProduct() {
   // Buscar produtos
   const fetchProdutos = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/products");
+      const res = await axios.get("https://mernproject-l8w4.onrender.com/api/products");
       setProdutos(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
@@ -36,7 +36,7 @@ function RegisterProduct() {
   // Deletar produto
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`http://https://mernproject-l8w4.onrender.com/api/products/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Erro ao deletar produto");
@@ -109,7 +109,7 @@ function RegisterProduct() {
                       {p.imagem && (
                         <div className="flex-shrink-0">
                           <img
-                            src={`http://localhost:5000${p.imagem}`}
+                            src={`https://mernproject-l8w4.onrender.com${p.imagem}`}
                             alt={p.nome}
                             className="w-32 h-32 object-cover rounded-lg border-4 border-pink-300 shadow-md"
                           />

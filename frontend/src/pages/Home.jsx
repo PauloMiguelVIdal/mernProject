@@ -11,7 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/products");
+        const res = await axios.get("https://mernproject-l8w4.onrender.com/api/products");
         setProducts(Array.isArray(res.data) ? res.data : []);
         console.log("Produtos recebidos:", res.data);
       } catch (error) {
@@ -78,7 +78,7 @@ const Home = () => {
             >
               <CardProduct
                 id={product._id || product.id}
-                image={`http://localhost:5000${product.imagem}`}
+                image={`https://mernproject-l8w4.onrender.com${product.imagem}`}
                 title={product.nome}
                 price={product.preco}
                 description={product.descricao}

@@ -118,7 +118,7 @@ Visão geral da aplicação de e-commerce, apresentando a interface da loja e a 
 
 <!-- SUBSTITUA pelo caminho da imagem -->
 
-<img src="./docs/ecommerce.png" alt="Rochelli Store — E-commerce de Vestuário" width="100%">
+<img src="./docs/catalogo-produtos.png" alt="Rochelli Store — E-commerce de Vestuário" width="100%">
 
 ---
 
@@ -138,7 +138,7 @@ Interface da loja para visualização dos produtos de vestuário disponíveis, c
 
 <!-- SUBSTITUA pelo caminho da imagem -->
 
-<img src="./docs/catalogo-produtos.png" alt="Rochelli Store — Catálogo de Produtos" width="100%">
+<img src="./docs/ecommerce.png.png" alt="Rochelli Store — Catálogo de Produtos" width="100%">
 
 ---
 
